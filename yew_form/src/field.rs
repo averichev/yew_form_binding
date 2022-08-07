@@ -27,6 +27,8 @@ pub struct FieldProperties<T: Model> {
     pub class_invalid: String,
     #[prop_or_else(|| { "is-valid".to_owned() })]
     pub class_valid: String,
+    #[prop_or_else(String::new)]
+    pub accept: String,
     #[prop_or_else(Callback::noop)]
     pub oninput: Callback<InputData>,
 }
@@ -41,6 +43,7 @@ pub struct Field<T: Model> {
     pub class: String,
     pub class_invalid: String,
     pub class_valid: String,
+    pub accept: String,
     pub oninput: Callback<InputData>,
 }
 
@@ -63,11 +66,11 @@ impl<T: Model> Field<T> {
     }
 
     pub fn message(&self) -> String {
-        self.form.field_message(&self.field_name())
+        self.form.field_message(self.field_name())
     }
 
     pub fn valid(&self) -> bool {
-        self.form.field_valid(&self.field_name())
+        self.form.field_valid(self.field_name())
     }
 
     pub fn dirty(&self) -> bool {
@@ -86,18 +89,19 @@ impl<T: Model> Component for Field<T> {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut form_field = Self {
             link,
-            autocomplete: String::from(props.autocomplete),
-            input_type: String::from(props.input_type),
-            field_name: String::from(props.field_name),
+            autocomplete: props.autocomplete,
+            input_type: props.input_type,
+            field_name: props.field_name,
             form: props.form,
-            placeholder: String::from(props.placeholder),
+            placeholder: props.placeholder,
             oninput: props.oninput,
             class: props.class,
             class_invalid: props.class_invalid,
             class_valid: props.class_valid,
+            accept: props.accept,
         };
 
-        if form_field.input_type == "" {
+        if form_field.input_type.is_empty() {
             form_field.input_type = String::from("text");
         }
 
@@ -131,7 +135,8 @@ impl<T: Model> Component for Field<T> {
                 placeholder=self.placeholder.clone()
                 autocomplete=self.autocomplete.clone()
                 value=self.form.field_value(&self.field_name)
-                oninput=self.link.callback(|e: InputData| FieldMessage::OnInput(e))
+                accept=self.accept.clone()
+                oninput=self.link.callback(FieldMessage::OnInput)
             />
         }
     }
