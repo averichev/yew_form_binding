@@ -12,6 +12,6 @@ categories = [ "web-programming" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-validator = "0.14.0"
-validator_derive = "0.14.0"
-yew = "0.18"
+validator = "0.16.1"
+validator_derive = "0.16.0"
+yew = "0.21.0"

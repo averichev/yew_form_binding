@@ -1,11 +1,11 @@
 use crate::{Model, Form};
-use yew::{Callback, ComponentLink, Component, Html, html, Properties};
+use yew::{Callback, Component, Html, html, Properties, Context};
 
 pub enum CheckBoxMessage {
     OnToggle,
 }
 
-#[derive(Properties, Clone)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct CheckBoxProperties<T: Model> {
     pub field_name: String,
     pub form: Form<T>,
@@ -14,7 +14,6 @@ pub struct CheckBoxProperties<T: Model> {
 }
 
 pub struct CheckBox<T: Model> {
-    link: ComponentLink<Self>,
     props: CheckBoxProperties<T>,
 }
 
@@ -36,14 +35,12 @@ impl<T: Model + Clone> Component for CheckBox<T> {
     type Message = CheckBoxMessage;
     type Properties = CheckBoxProperties<T>;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self {
-            link,
-            props,
-        }
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props().clone();
+        Self{ props }
     }
 
-    fn update(&mut self, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             CheckBoxMessage::OnToggle => {
                 let value = !self.value();
@@ -54,19 +51,18 @@ impl<T: Model + Clone> Component for CheckBox<T> {
         }
     }
 
-    fn change(&mut self, _props: Self::Properties) -> bool {
-        true
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let link = ctx.link();
         html! {
+            <>
             <input
                 type="checkbox"
-                value=self.props.field_name.clone()
-                onclick=self.link.callback(|_e| CheckBoxMessage::OnToggle)
-                checked=self.value()
+                value={self.props.field_name.clone()}
+                onclick={link.callback(|_e| CheckBoxMessage::OnToggle)}
+                checked={self.value()}
                 class="form-check-input form-input"
              />
+            </>
         }
     }
 }
