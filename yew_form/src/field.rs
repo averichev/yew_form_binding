@@ -1,10 +1,11 @@
-use yew::{html, Callback, Component, ComponentLink, Html, InputData, Properties, ShouldRender};
-
+use yew::{html, Callback, Component, Html, Properties, Context, Event};
+use web_sys::{HtmlInputElement, InputEvent};
+use web_sys::wasm_bindgen::{JsCast, UnwrapThrowExt};
 use crate::form::Form;
 use crate::Model;
 
 pub enum FieldMessage {
-    OnInput(InputData),
+    OnInput(String),
 }
 
 fn default_text() -> String {
@@ -30,11 +31,10 @@ pub struct FieldProperties<T: Model> {
     #[prop_or_else(String::new)]
     pub accept: String,
     #[prop_or_else(Callback::noop)]
-    pub oninput: Callback<InputData>,
+    pub oninput: Callback<String>,
 }
 
 pub struct Field<T: Model> {
-    link: ComponentLink<Self>,
     pub autocomplete: String,
     pub input_type: String,
     pub field_name: String,
@@ -44,7 +44,7 @@ pub struct Field<T: Model> {
     pub class_invalid: String,
     pub class_valid: String,
     pub accept: String,
-    pub oninput: Callback<InputData>,
+    pub oninput: Callback<String>,
 }
 
 impl<T: Model> Field<T> {
@@ -86,9 +86,9 @@ impl<T: Model> Component for Field<T> {
     type Message = FieldMessage;
     type Properties = FieldProperties<T>;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let props = ctx.props().clone();
         let mut form_field = Self {
-            link,
             autocomplete: props.autocomplete,
             input_type: props.input_type,
             field_name: props.field_name,
@@ -108,11 +108,11 @@ impl<T: Model> Component for Field<T> {
         form_field
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             FieldMessage::OnInput(input_data) => {
                 let mut state = self.form.state_mut();
-                state.set_field_value(&self.field_name, &input_data.value);
+                state.set_field_value(&self.field_name, &input_data);
                 state.update_validation_field(&self.field_name);
                 drop(state);
 
@@ -122,21 +122,24 @@ impl<T: Model> Component for Field<T> {
         }
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
-        true
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let link = ctx.link();
+        let oninput = link.callback(|e: InputEvent| {
+            let event: Event = e.dyn_into().unwrap_throw();
+            let event_target = event.target().unwrap_throw();
+            let target: HtmlInputElement = event_target.dyn_into().unwrap_throw();
+            FieldMessage::OnInput(target.value())
+        });
         html! {
             <input
-                class=self.class().to_string()
-                id=self.field_name.clone()
-                type=self.input_type.clone()
-                placeholder=self.placeholder.clone()
-                autocomplete=self.autocomplete.clone()
-                value=self.form.field_value(&self.field_name)
-                accept=self.accept.clone()
-                oninput=self.link.callback(FieldMessage::OnInput)
+                class={self.class().to_string()}
+                id={self.field_name.clone()}
+                type={self.input_type.clone()}
+                placeholder={self.placeholder.clone()}
+                autocomplete={self.autocomplete.clone()}
+                value={self.form.field_value(&self.field_name)}
+                accept={self.accept.clone()}
+                {oninput}
             />
         }
     }

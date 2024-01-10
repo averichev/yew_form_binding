@@ -40,7 +40,7 @@ impl<T: Model + Clone> Component for CheckBox<T> {
         Self{ props }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             CheckBoxMessage::OnToggle => {
                 let value = !self.value();
